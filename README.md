@@ -24,6 +24,8 @@ A comprehensive collection of Python CLI tools for network intelligence gatherin
   - [IX Peering Gaps](#8-ix-peering-gaps)
   - [Remote Tcpdump](#9-remote-tcpdump)
   - [CLI Usage Tracker](#10-cli-usage-tracker)
+  - [BGP Prefix Checker](#11-bgp-prefix-checker)
+  - [Nokia Card Report](#12-nokia-card-report)
 - [Real-World Use Cases](#real-world-use-cases)
 - [Environment Variables](#environment-variables)
 - [Output Formats](#output-formats)
@@ -730,6 +732,212 @@ python3 cli_usage_tracker.py --from-isis --concurrency 20
 | `cli_usage_report_*.csv` | Raw data for analysis |
 | `cli_usage_summary_*.txt` | Executive summary |
 | `cli_usage_cli_only_*.txt` | CLI-only commits (violations) |
+
+---
+
+### 11. BGP Prefix Checker
+
+**File**: `bgp_prefix_checker.py`
+
+Multi-source BGP prefix visibility analyzer that queries RIPEstat, BGPView, PeeringDB, Cloudflare Radar, and Team Cymru simultaneously to provide comprehensive prefix intelligence.
+
+#### Features
+
+- **Multi-Provider Queries**: Aggregates data from 5+ BGP intelligence sources
+- **Prefix Visibility Analysis**: Checks global routing visibility and propagation
+- **RPKI Validation**: Verifies ROA status across multiple validators
+- **AS Path Analysis**: Shows upstream path diversity and AS relationships
+- **IRR Consistency**: Cross-references with IRR databases
+- **Bulk Processing**: Process multiple prefixes from file input
+- **JSON Output**: Machine-readable output for automation
+
+#### Usage
+
+```bash
+# Single prefix check
+python3 bgp_prefix_checker.py --prefix 203.0.113.0/24
+
+# Multiple prefixes
+python3 bgp_prefix_checker.py --prefix 203.0.113.0/24,198.51.100.0/24
+
+# From file (one prefix per line)
+python3 bgp_prefix_checker.py --file prefixes.txt
+
+# JSON output for automation
+python3 bgp_prefix_checker.py --prefix 203.0.113.0/24 --json
+
+# Include AS path details
+python3 bgp_prefix_checker.py --prefix 203.0.113.0/24 --show-paths
+
+# Filter by specific ASN origin
+python3 bgp_prefix_checker.py --prefix 203.0.113.0/24 --origin-asn 64496
+
+# Verbose output with all provider responses
+python3 bgp_prefix_checker.py --prefix 203.0.113.0/24 --verbose
+```
+
+#### CLI Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--prefix` | Required | Prefix(es) to check (comma-separated) |
+| `--file` | None | File containing prefixes (one per line) |
+| `--json` | False | Output results as JSON |
+| `--show-paths` | False | Include AS path details |
+| `--origin-asn` | None | Filter by expected origin ASN |
+| `--verbose` | False | Show all provider responses |
+| `--timeout` | `30` | Request timeout in seconds |
+| `--concurrency` | `4` | Parallel provider queries |
+
+#### Output Example
+
+```
+=== BGP Prefix Check: 203.0.113.0/24 ===
+
+Provider: RIPEstat
+  Status: ANNOUNCED
+  Origin ASN: AS64496
+  RPKI: VALID (ROA exists)
+  Visibility: 98.5% (247/251 RIS peers)
+
+Provider: BGPView
+  Status: ANNOUNCED
+  Origin ASN: AS64496
+  AS Path: [64496, 174, 1299]
+
+Provider: Team Cymru
+  ASN: 64496
+  AS Name: Example Network Inc
+  Country: US
+
+Provider: Cloudflare Radar
+  Status: Active
+  Category: Enterprise
+
+Summary:
+  Prefix: 203.0.113.0/24
+  Consistent Origin: YES (AS64496)
+  RPKI Status: VALID
+  Global Visibility: HIGH (98.5%)
+  Providers Queried: 5/5 successful
+```
+
+#### Use Cases
+
+1. **Prefix Announcement Verification**: Confirm your prefixes are visible globally
+2. **Hijack Detection**: Identify unauthorized origin ASNs
+3. **RPKI Deployment Validation**: Verify ROA coverage before deploying
+4. **Peering Troubleshooting**: Check path diversity and propagation issues
+5. **Due Diligence**: Research prefix ownership before IP acquisitions
+
+---
+
+### 12. Nokia Card Report
+
+**File**: `nokia_card_report.py`
+
+Bulk CF (Compact Flash) card health checker for Nokia SROS devices. Connects to multiple routers, collects card details and file lists, then generates an HTML dashboard with health status indicators.
+
+#### Features
+
+- **Bulk Device Processing**: Connect to multiple routers from inventory file
+- **CF Card Health Checks**: Validates CF2/CF3 size, utilization, and state
+- **Configurable Thresholds**: Set expected sizes and utilization limits
+- **HTML Dashboard**: Color-coded visual report with status icons
+- **Raw Data Export**: Save CLI outputs for detailed analysis
+- **Unreachable Tracking**: Identifies connectivity issues
+- **Not-Equipped Detection**: Flags missing flash cards
+
+#### Prerequisites
+
+- Python 3.7+
+- Netmiko library
+- SSH connectivity to Nokia SROS devices
+- MD-CLI enabled on target devices
+
+#### Usage
+
+```bash
+# Install dependencies
+pip install netmiko
+
+# Prepare router inventory (my_routers.txt)
+cat > my_routers.txt << 'EOF'
+router1.example.com
+router2.example.com
+10.0.0.1
+10.0.0.2
+EOF
+
+# Run the report
+python3 nokia_card_report.py
+
+# Script prompts for credentials
+# Username: <your-username>
+# Password: <your-password>
+```
+
+#### Configuration
+
+Edit the configuration section at the top of the script:
+
+```python
+# Expected CF card sizes (MB)
+EXP_CF2_SIZE_MB = 3904   # Expected CF2 size
+EXP_CF3_SIZE_MB = 7800   # Expected CF3 size
+
+# Size tolerance (MB)
+CF2_TOLERANCE = 1        # Allow +/- 1 MB variance
+CF3_TOLERANCE = 1
+
+# Utilization threshold (%)
+PCT_THRESHOLD = 60       # Warn if usage exceeds 60%
+```
+
+#### Output Files
+
+| File | Description |
+|------|-------------|
+| `report.html` | Interactive HTML dashboard with color-coded status |
+| `card_report.txt` | Raw `show card detail` output per device |
+| `file_lists.txt` | Raw `file list` output per device |
+
+#### HTML Dashboard Features
+
+- **Green cells**: Values within expected range
+- **Yellow cells**: Warning (not equipped, approaching threshold)
+- **Red cells**: Critical (size mismatch, over threshold, failed state)
+- **Unreachable section**: Lists devices that couldn't be contacted
+- **Not-Equipped section**: Lists devices with missing flash cards
+
+#### Example Inventory File
+
+```text
+# my_routers.txt
+# Lines starting with # are comments
+core-router1.dc1.example.com
+core-router2.dc1.example.com
+edge-router1.pop1.example.com
+10.100.1.1
+10.100.1.2
+# Temporarily exclude:
+# maintenance-router.example.com
+```
+
+#### Commands Executed
+
+The script runs these commands on each device:
+1. `show card detail | no-more` - CF card hardware status
+2. `file list | no-more` - Flash filesystem contents
+
+#### Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| `NetMikoTimeoutException` | Check SSH connectivity, increase timeout |
+| `NetMikoAuthenticationException` | Verify username/password |
+| Missing CF data | Ensure device has CF2/CF3 installed |
+| Parsing errors | Check SROS version compatibility |
 
 ---
 
