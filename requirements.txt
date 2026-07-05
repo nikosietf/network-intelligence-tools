@@ -1,2 +1,15 @@
 # Network Intelligence Tools - Dependencies
 requests>=2.28.0
+
+# For remote_tcpdump.py and cli_usage_tracker.py
+netmiko>=4.0.0
+paramiko>=3.0.0
+ncclient>=0.6.13
+python-dotenv>=1.0.0
+pexpect>=4.8.0
+openpyxl>=3.0.0
+lxml>=4.9.0
+
+# Optional: Nokia SROS support (remote_tcpdump.py)
+scrapli>=2023.1.0
+scrapli_community>=2023.1.0

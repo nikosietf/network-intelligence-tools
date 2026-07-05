@@ -14,6 +14,8 @@ A collection of Python CLI tools for network intelligence gathering, BGP analysi
 | `ripe_atlas_client.py` | RIPE Atlas API client for network measurements | Optional* |
 | `cloudflare_radar_client.py` | Cloudflare Radar API client for BGP intelligence | Yes |
 | `ix_peering_gaps.py` | Identify peering opportunities at shared IXs | No |
+| `remote_tcpdump.py` | Multi-vendor remote packet capture (Juniper/Arista/Nokia/ArcOS) | No |
+| `cli_usage_tracker.py` | Track CLI vs NETCONF commit usage across network devices | No |
 
 \* Read-only queries work without API key. Creating measurements requires one.
 
@@ -136,6 +138,41 @@ python3 ix_peering_gaps.py --asn 13335
 python3 ix_peering_gaps.py --asn 13335 --type NSP --min-speed 10000
 ```
 
+### Remote Tcpdump - Multi-Vendor Packet Capture
+
+```bash
+# Capture on Juniper device (auto-detect vendor)
+python3 remote_tcpdump.py -d router1.lab --duration 60
+
+# Show ISIS/OSPF interfaces
+python3 remote_tcpdump.py -d router1.lab --show-interfaces
+
+# Capture on specific interface
+python3 remote_tcpdump.py -d router1.lab --isis-interface ae15.0
+
+# Capture BGP traffic only
+python3 remote_tcpdump.py -d router1.lab --port 179 --duration 120
+
+# Explicit vendor override
+python3 remote_tcpdump.py -d mydevice --vendor nokia --interface 1/1/c1/1
+```
+
+### CLI Usage Tracker - Commit History Analysis
+
+```bash
+# Pull device list from ISIS and analyze commits
+python3 cli_usage_tracker.py --from-isis
+
+# Analyze specific devices
+python3 cli_usage_tracker.py --devices router1,router2,switch1
+
+# Filter by vendor and limit commits
+python3 cli_usage_tracker.py --from-isis --vendor Juniper --max-commits 50
+
+# Use custom inventory file
+python3 cli_usage_tracker.py --inventory ~/device_inventory.csv
+```
+
 ## Environment Variables
 
 | Variable | Tool | Description |
@@ -144,6 +181,8 @@ python3 ix_peering_gaps.py --asn 13335 --type NSP --min-speed 10000
 | `CLOUDFLARE_API_TOKEN` | cloudflare_radar_client.py | Cloudflare API token |
 | `CLOUDFLARE_API_KEY` | cloudflare_radar_client.py | Alternative: Cloudflare API key |
 | `CLOUDFLARE_EMAIL` | cloudflare_radar_client.py | Alternative: Cloudflare account email |
+| `DEVICE_USERNAME` | remote_tcpdump.py, cli_usage_tracker.py | SSH username for device access |
+| `DEVICE_PASSWORD` | remote_tcpdump.py, cli_usage_tracker.py | SSH password for device access |
 
 ## Output Formats
 
